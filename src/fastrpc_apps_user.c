@@ -375,6 +375,7 @@ void *remote_register_fd(int fd, int size) {
 static void remote_register_buf_common(void* buf, int size, int fd, int attr) {
    int nErr = 0;
    VERIFY(!fastrpc_init_once());
+   VERIFYC(NULL != buf, AEE_EBADPARM);
    if(fd != -1) {
       struct mem_to_fd* tofd;
       int fdfound = 0;
