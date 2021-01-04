@@ -90,6 +90,7 @@
 #define INVALID_KEY    (pthread_key_t)(-1)
 
 #define MAX_DMA_HANDLES 256
+#define MAX_DLERRSTR_LEN 255
 
 #define FASTRPC_TRACE_INVOKE_START "fastrpc_trace_invoke_start"
 #define FASTRPC_TRACE_INVOKE_END   "fastrpc_trace_invoke_end"
@@ -924,14 +925,20 @@ bail:
 
 int remote_handle_close(remote_handle h)
 {
-   char dlerrstr[255];
+   char *dlerrstr = NULL;
    int dlerr = 0, nErr = AEE_SUCCESS;
+   size_t err_str_len = MAX_DLERRSTR_LEN*sizeof(char);
 
-   VERIFY(AEE_SUCCESS == (nErr = remotectl_close(h, dlerrstr, sizeof(dlerrstr), &dlerr)));
+   VERIFYC(NULL != (dlerrstr = (char*)calloc(1, err_str_len)), AEE_ENOMEMORY);
+   VERIFY(AEE_SUCCESS == (nErr = remotectl_close(h, dlerrstr, err_str_len, &dlerr)));
    VERIFY(AEE_SUCCESS == (nErr = dlerr));
 bail:
    if (nErr != AEE_SUCCESS) {
-	FARF(HIGH, "Error %x: remote handle close failed. error %s\n", nErr, dlerrstr);
+        FARF(HIGH, "Error %x: remote handle close failed. error %s\n", nErr, dlerrstr);
+   }
+   if (dlerrstr) {
+        free(dlerrstr);
+        dlerrstr = NULL;
    }
    return nErr;
 }
