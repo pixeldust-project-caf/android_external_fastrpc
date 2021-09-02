@@ -560,11 +560,31 @@ static int fdlist_fd_from_buf(void* buf, int bufLen, int* nova, void** base, int
    return 0;
 }
 
+static inline int is_valid_local_handle(struct handle_info* hinfo) {
+	int domain = 0;
+	QNode* pn = NULL;
+	struct handle_info* hi = NULL;
+
+	for (domain = 0; domain < NUM_DOMAINS_EXTEND; domain++) {
+		pthread_mutex_lock(&hlist[domain].mut);
+		QLIST_FOR_ALL(&hlist[domain].ql, pn) {
+			hi = STD_RECOVER_REC(struct handle_info, qn, pn);
+			if (hi == hinfo) {
+				pthread_mutex_unlock(&hlist[domain].mut);
+				return 1;
+			}
+		}
+		pthread_mutex_unlock(&hlist[domain].mut);
+	}
+	return 0;
+}
+
 static int verify_local_handle(remote_handle64 local) {
 	struct handle_info* hinfo = (struct handle_info*)(uintptr_t)local;
 	int nErr = AEE_SUCCESS;
 
 	VERIFYC(hinfo, AEE_EMEMPTR);
+	VERIFYC(is_valid_local_handle(hinfo), AEE_EBADHANDLE);
 	VERIFYC((hinfo->hlist >= &hlist[0]) && (hinfo->hlist < &hlist[NUM_DOMAINS_EXTEND]), AEE_EMEMPTR);
 	VERIFYC(QNode_IsQueuedZ(&hinfo->qn), AEE_ENOSUCHHANDLE);
 bail:
