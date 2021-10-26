@@ -1250,7 +1250,12 @@ bail:
 }
 
 int remote_mmap(int fd, uint32_t flags, uint32_t vaddrin, int size, uint32_t* vaddrout) {
-	return remote_mmap64(fd, flags, (uintptr_t)vaddrin, (int64_t)size, (uint64_t*)vaddrout);
+	uint64_t vaddrout_64;
+	int nErr = 0;
+
+	nErr = remote_mmap64(fd, flags, (uintptr_t)vaddrin, (int64_t)size, &vaddrout_64);
+	*vaddrout = (uint32_t)vaddrout_64;
+	return nErr;
 }
 
 int remote_munmap64(uint64_t vaddrout, int64_t size) {
